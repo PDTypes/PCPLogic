@@ -1,0 +1,5 @@
+(defun take_image(s d i m) (cons (cons `(satellite ,s) (cons `(direction ,d) (cons `(instrument ,i) (cons `(mode ,m) (cons `(calibrated ,i) (cons `(on_board ,i ,s) (cons `(supports ,i ,m) (cons `(power_on ,i) (cons `(pointing ,s ,d) nil))))))))) (cons `(have_image ,d ,m) nil)))
+(defun calibrate(s i d) (cons (cons `(satellite ,s) (cons `(instrument ,i) (cons `(direction ,d) (cons `(on_board ,i ,s) (cons `(calibration_target ,i ,d) (cons `(pointing ,s ,d) (cons `(power_on ,i) nil))))))) (cons `(calibrated ,i) nil)))
+(defun switch_off(i s) (cons (cons `(instrument ,i) (cons `(satellite ,s) (cons `(on_board ,i ,s) (cons `(power_on ,i) nil)))) (cons `(power_avail ,s) (cons `(not (power_on ,i)) nil))))
+(defun switch_on(i s) (cons (cons `(instrument ,i) (cons `(satellite ,s) (cons `(on_board ,i ,s) (cons `(power_avail ,s) nil)))) (cons `(power_on ,i) (cons `(not (calibrated ,i)) (cons `(not (power_avail ,s)) nil)))))
+(defun turn_to(s d_new d_prev) (cons (cons `(satellite ,s) (cons `(direction ,d_new) (cons `(direction ,d_prev) (cons `(pointing ,s ,d_prev) nil)))) (cons `(pointing ,s ,d_new) (cons `(not (pointing ,s ,d_prev)) nil))))
