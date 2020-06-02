@@ -13,10 +13,9 @@ This code is tested and compiled with the following:
 
 Agda version 2.6.1
 
--- Libraries 
-
-Agda Standard Library version 1.4-dev
-Agda Prelude master branch as of 13/04/20
+**Libraries**
+- Agda Standard Library version 1.4-dev
+- Agda Prelude master branch as of 13/04/20
 
 It should be noted that the prelude library is only used in instantiations of 
 our system so you can compile PCPLogic.agda without it. The main use of the 
