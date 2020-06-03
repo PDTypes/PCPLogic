@@ -12,7 +12,7 @@ open import Level
 -- The following module declarartion allows to develop the file parametrised on an abstract set R of predicates
 -- an an abstract set A of declared actions. The former must have decidable equivalence.
 
-module sep_experiment {Action : Set} {R : Set} {C : Set} {isDE : IsDecEquivalence {A = R} (_≡_) }
+module PCPLogic {Action : Set} {R : Set} {C : Set} {isDE : IsDecEquivalence {A = R} (_≡_) }
                                               {isDEC : IsDecEquivalence {A = C} (_≡_) }
                                               {isDECA : IsDecEquivalence {A = Action} (_≡_) }where
 
@@ -22,6 +22,8 @@ open import Agda.Builtin.Nat hiding (_*_ ; _+_ ; _-_; zero)
 open import Data.Vec hiding (_++_; remove)
 open import Data.List hiding (any)
 open import Data.Product
+
+
 
 
 --This data type describes a plan which is a non-empty sequence of Actions
@@ -48,7 +50,6 @@ infixl 5 ¬_
 -- Figure 4. Possible worlds
 --
 
-
 World : Set
 World = List R
 
@@ -60,6 +61,23 @@ data Polarity : Set where
 neg : Polarity → Polarity
 neg + = -
 neg - = +
+
+
+
+{- This is silly
+
+open import Data.Sum
+
+data exp (A B : Set) : Set where
+  _∧L_ : exp A B → exp A B → exp A B
+  ¬L_ :  (a b : (A ⊎ B)) -> a ≢ b → exp A B
+  _=L_ : (a b : (A ⊎ B)) -> a ≡ b -> exp A B
+-}
+
+-- Logical expressions involving equality
+data exp : Set where
+  _¬L_ : (a b : C) -> exp
+  _=L_ : (a b : C) -> exp
 
 --------------------------------------------------------
 -- Figure 6. Declarative (possible world) semantics
@@ -155,12 +173,10 @@ lemma-transport-l t (atom x) M N = sym (++-assoc M ((t , x) ∷ []) N)
 
 open import AnyLemma
 
-
 ∈-transport-l : ∀ a {t1} t P M N -> (t1 , a) ∈ ( M ++ (P ↓[ t ] N))
   -> (t1 , a) ∈ ((M ++ (P ↓[ t ] [])) ++ N)
 ∈-transport-l a₁ {t₁} t P M N x
   = any-cong {zero} {zero} {Polarity × R} {λ _ → R} x (lemma-transport-l t P M N)
-
 
 
 ∈-transport-r : ∀ a {t1} t P M N -> (t1 , a) ∈ ((M ++ (P ↓[ t ] [])) ++ N)
@@ -393,7 +409,7 @@ decValidState ((t , At') ∷ s) | no ¬p = decValidState s
 
 -- Context
 Γ : Set
-Γ = Action → State × State
+Γ = Action → (List exp) × (State × State)
 
 -- Decidablity of polarities
 decZ : (z : Polarity) -> (z' : Polarity) -> Dec (z ≡ z')
@@ -462,37 +478,74 @@ decSub (p ∷ P) Q | yes p₁ | yes p₂ = yes (atom<: p₁ p₂)
 
 -----------------------------------------------------------------------
 
-open Data.List renaming (_∷_ to _*_)
+{-
+-- Logical expressions involving equality
+data exp : Set where
+  empL : exp
+  _∧L_ : exp → exp → exp
+  _¬L_ : (a b : C) -> exp
+  _=L_ : (a b : C) -> exp -}
+
+trueExp : exp -> Set
+trueExp (a ¬L b) with a =C? b
+trueExp (a ¬L .a) | yes refl = ⊥
+trueExp (a ¬L b) | no ¬p = ⊤
+trueExp (a =L b) with a =C? b
+trueExp (a =L .a) | yes refl = ⊤
+trueExp (a =L b) | no ¬p = ⊥
+
+decTrueExp : (e : exp) -> Dec (trueExp e)
+decTrueExp (a ¬L b) with a =C? b
+decTrueExp (a ¬L .a) | yes refl = no (λ z → z)
+decTrueExp (a ¬L b) | no ¬p = yes tt
+decTrueExp (a =L b) with a =C? b
+decTrueExp (a =L .a) | yes refl = yes tt
+decTrueExp (a =L b) | no ¬p = no (λ z → z)
+
+trueListExp : List exp -> Set
+trueListExp [] = ⊤
+trueListExp (x ∷ x₁) with decTrueExp x
+trueListExp (x ∷ x₁) | yes p with trueListExp x₁
+... | ans = ans
+trueListExp (x ∷ x₁) | no ¬p = ⊥
+
+decTrueListExp : (e : List exp) -> Dec (trueListExp e)
+decTrueListExp [] = yes tt
+decTrueListExp (x ∷ xs) with decTrueExp x
+decTrueListExp (x ∷ xs) | yes p with decTrueListExp xs
+decTrueListExp (x ∷ xs) | yes p | yes p₁ = yes p₁
+decTrueListExp (x ∷ xs) | yes p | no ¬p = no ¬p
+decTrueListExp (x ∷ xs) | no ¬p = no (λ z → z)
 
 data  _,_¦_ :  Γ -> (State × State) -> f -> Set where
     weakening : ∀{Γ P Q fs} ->  (P' : State) -> P <: P' -> validState P' -> Γ , P ↝ Q ¦ fs -> Γ , P' ↝ Q ¦ fs
-    applyAction : ∀ {Γ f} -> validState (proj₁ (Γ f)) -> validState (proj₂ (Γ f)) -> Γ , Γ f ¦ act f
-    composition : ∀ {Γ P Q Q' R fs f'} -> Q' <: Q -> Γ , P ↝ Q ¦ fs -> Γ , Q' ↝ R ¦ f' -> Γ , P ↝ R ¦ join fs f'
+    applyAction : ∀ {Γ f} -> trueListExp (proj₁ (Γ f)) 
+                          -> validState (proj₁ (proj₂ (Γ f))) -> validState (proj₂ (proj₂ (Γ f)))
+                          -> Γ , proj₂ (Γ f) ¦ act f
+    composition : ∀ {Γ P Q Q' R fs f'} -> Q' <: Q -> Γ , P ↝ Q ¦ fs -> Γ , Q' ↝ R ¦ act f' -> Γ , P ↝ R ¦ join fs (act f')
     frame : ∀ {Γ P Q f } -> (z : Polarity) -> (a : R) -> a ∉S P -> a ∉S Q -> Γ , P ↝  Q  ¦ act f
-                                                                              -> Γ , ((z , a) * P) ↝  ((z , a) * Q)  ¦ act f --this is a restriction on the normal frame rule
+                                                                              -> Γ , ((z , a) ∷ P) ↝  ((z , a) ∷ Q)  ¦ act f --this is a restriction on the normal frame rule
     halt :  ∀ {Γ P Q fs} -> (Q' : State) -> (validState Q') -> Q' <: Q -> Γ , P ↝ Q ¦ fs ->  Γ , P ↝ Q' ¦ join fs (halt)
 
 
--- Transitivity of subtyping
---transSub : (L : State) -> (M : State) -> (N : State) -> L <: M -> M <: N -> L <: N
---transSub [] M N x x₁ = []<: N
---transSub (.(_ ↝ _) ∷ L) M N (atom<: x x₂) x₁ = atom<: (helpTrans _ M N x x₁) (transSub L M N x₂ x₁)
-
 --Proof that an actions preconditions are always a subtype of pre-state, p , in a given contstruction of our semantics
-preSatP : ∀ Γ p q f -> Γ , p ↝ q ¦ act f -> proj₁ (Γ f) <: p
+preSatP : ∀ Γ p q f -> Γ , p ↝ q ¦ act f -> proj₁ (proj₂ (Γ f)) <: p
 preSatP Γ p q f₁ (weakening .p x₁ x₂ x) with preSatP Γ _ q f₁ x
-... | ans = transSub (proj₁ (Γ f₁)) _ p ans x₁
-preSatP Γ p q f₁ (applyAction x x₁) = reflSub p
+... | ans = transSub (proj₁ (proj₂ (Γ f₁)))  _ p ans x₁
+preSatP Γ p q f₁ (applyAction e x x₁) = reflSub p
 preSatP Γ ((z ↝ a) ∷ p) ((z ↝ a) ∷ q) f₁ (frame z a x x₁ x₂) with preSatP Γ p q f₁ x₂
 ... | ans = <:atom _ p (z , a) ans
 
+
+
 --Proof that an actions postconditions are always a subtype of post-state, q , in a given contstruction of our semantics
-postSatQ : ∀ Γ p q f -> Γ , p ↝ q ¦ act f -> proj₂ (Γ f) <: q
+postSatQ : ∀ Γ p q f -> Γ , p ↝ q ¦ act f -> proj₂ (proj₂ (Γ f)) <: q
 postSatQ Γ₁ p q f₁ (weakening .p x₁ x₂ x) with postSatQ Γ₁ _ q f₁ x
 ... | ans = ans
-postSatQ Γ p q f₁ (applyAction x x₁) = reflSub q
+postSatQ Γ p q f₁ (applyAction e x x₁) = reflSub q
 postSatQ Γ ((z ↝ a) ∷ p) ((z ↝ a) ∷ q) f₁ (frame z a x x₁ x₂) with postSatQ Γ p q f₁ x₂
 ... | ans = <:atom _ q (z , a) ans
+
 
 ------------------------------------------------------------
 
@@ -514,19 +567,23 @@ validStateToS ((z ↝ r) ∷ S) x with isInState r S
 validStateToS ((z ↝ r) ∷ S) x | yes p = ⊥-elim x
 validStateToS ((z ↝ r) ∷ S) x | no ¬p = ¬p ↝ validStateToS S x
 
+-- An assumption that all Actions contain valid States
+postulate
+  act-ass : (Γ₁ : Γ) -> (f : Action) -> validS (proj₁ (proj₂ (Γ₁ f))) × validS (proj₂ ( proj₂(Γ₁ f)))
+
+
 -- A proof showing that our rules will never introduce inconsistency as long as we were given
 -- valid actions.
 consistency : ∀ Γ p q fs -> Γ , p ↝ q ¦ fs -> validS p × validS q
 consistency Γ₁ p q fs (weakening .p x x₁ x₂) with consistency Γ₁ _ q fs x₂
 ... | fst ↝ snd = validStateToS p x₁ ↝ snd
-consistency Γ₁ p q .(act _) (applyAction vp vq) = validStateToS p vp ↝ validStateToS q vq
+consistency Γ₁ p q .(act _) (applyAction ex vp vq) = validStateToS p vp ↝ validStateToS q vq
 consistency Γ₁ p q .(join _ _) (composition x x₁ x₂) with consistency Γ₁ _ q _ x₂ | consistency Γ₁ p _ _ x₁
 ... | fst ↝ snd | fst₁ ↝ snd₁ = fst₁ ↝ snd
 consistency Γ₁ ((z ↝ a) ∷ p) ((z ↝ a) ∷ q) f (frame z a x x₁ x₂) with consistency Γ₁ p _ f x₂
 ... | fst ↝ snd = (x ↝ fst) ↝ x₁ ↝ snd
 consistency Γ₁ p q .(join _ halt) (halt .q x x₁ x₂) with consistency Γ₁ p _ _ x₂
 ... | fst ↝ snd = fst ↝ (validStateToS q x)
-
 
 open import Data.Sum
 
@@ -589,10 +646,11 @@ ActionHandler = Action → World → World
   results in M being overriden by proj₂ (Γ α) in w
 -}
 
-
 WfHandler : Γ → ActionHandler → Set
 WfHandler Γ σ =
-  ∀{α P} → proj₁ (Γ α) <: P → ∀{w} → w ∈⟨ P ⟩ → σ α w ∈⟨ P ⊔N proj₂ (Γ α) ⟩
+  ∀{α P} → proj₁ (proj₂ (Γ α)) <: P → ∀{w} → w ∈⟨ P ⟩ →  trueListExp (proj₁ (Γ α)) -> σ α w ∈⟨ P ⊔N proj₂ (proj₂ (Γ α)) ⟩
+
+
 
 -- If some state M is satisfied in the world w and we have another state N
 -- that is a subtype of M then N is also satisfied in the world
@@ -608,6 +666,7 @@ WfHandler Γ σ =
   rt a' (here px) a'∈w =
     proj₂ w∈⟨M⟩ a' (subst (λ tx → tx ∈ M) (Relation.Binary.PropositionalEquality.sym px) tx∈M) a'∈w
   rt a' (there -a'∈N) a'∈w = proj₂ ih a' -a'∈N a'∈w
+
 
 -- When P is overrided with Q all elements of Q remain in the result
 PostPreservationO : (Q : State) -> (s : PredMap) -> (P : State) -> s ∈ Q → s ∈ P ⊔N Q
@@ -627,11 +686,13 @@ PostSatO σ f₁ w P Q Γ₁ x = <:-resp-∈ (PostSubO P Q) x
 -- If we have a well formed handler and an action and the pre-conditions of an action are satsfied in a given world then we can apply
 -- the ActionHandler to produce a world where the post-conditions are satisfied.
 wellFormedApplication : (σ : ActionHandler) -> (w : World) -> (Γ₁ : Γ) -> (f : Action) -> WfHandler Γ₁ σ
-                                               -> validState (proj₁ (Γ₁ f))
-                                               ->  validState (proj₂ (Γ₁ f))
-                                               -> w ∈⟨ proj₁ (Γ₁ f) ⟩ ->  σ f w ∈⟨ proj₂ (Γ₁ f) ⟩
-wellFormedApplication σ w Γ₁ f₁ WfH vp vq w∈⟨P⟩ with WfH (preSatP Γ₁ (proj₁ (Γ₁ f₁)) (proj₂ (Γ₁ f₁)) f₁ (applyAction vp vq)) w∈⟨P⟩
-wellFormedApplication σ w Γ₁ f₁ x vp vq x₁ | ans = PostSatO σ f₁ w (proj₁ (Γ₁ f₁)) (proj₂ (Γ₁ f₁)) Γ₁ ans
+                                               -> validState (proj₁ (proj₂ (Γ₁ f)))
+                                               ->  validState (proj₂ (proj₂ (Γ₁ f)))
+                                               -> w ∈⟨ proj₁ (proj₂ (Γ₁ f)) ⟩
+                                               -> trueListExp (proj₁ (Γ₁ f))
+                                               ->  σ f w ∈⟨ proj₂ (proj₂ (Γ₁ f)) ⟩
+wellFormedApplication σ w Γ₁ f₁ WfH vp vq w∈⟨P⟩ eSat with WfH (preSatP Γ₁ (proj₁ (proj₂ (Γ₁ f₁))) (proj₂ (proj₂ (Γ₁ f₁))) f₁ (applyAction eSat vp vq)) w∈⟨P⟩ eSat
+wellFormedApplication σ w Γ₁ f₁ x vp vq x₁ eSat | ans = PostSatO σ f₁ w (proj₁ (proj₂ (Γ₁ f₁))) (proj₂ (proj₂ (Γ₁ f₁))) Γ₁ ans
 
 -- If a State, (s :: S), is satisfied in a world then we can Weaken the result to show that S will also be satisfied
 weakHelp : (w : World) -> (s : PredMap) -> (S : State) -> w ∈⟨ s ∷ S ⟩ -> w ∈⟨ S ⟩
@@ -676,15 +737,15 @@ proofSub .(proj₂ p) (p ∷ P) Q x x₁ refl | yes p₁ = x₁ (ProofSubIn (pro
 proofSub a (p ∷ P) Q x x₁ x₂ | no ¬p = proofSub a P Q (weakSub p P Q x) x₁ x₂
 
 -- If a predicate, a, is not in Q and a predMap containing a is in P then that predMap will still exist after P is overriden by Q
-predMapMembership : (Γ₁ : Γ) ->  (f₁ : Action) -> (z : Polarity) -> (a : R) -> (P : State) -> (Q : State) -> a ∉S Q -> (z , a) ∈ (((z , a) ∷ P) ⊔N Q)
-predMapMembership Γ₁ f₁ z a P [] x = here refl
-predMapMembership Γ₁ f₁ z a P (q ∷ Q) x with proj₂ q ≟ a
-predMapMembership Γ₁ f₁ z .(proj₂ q) P (q ∷ Q) x | yes refl = ⊥-elim (x refl)
-predMapMembership Γ₁ f₁ z a P (q ∷ Q) x | no ¬p = there (predMapMembership Γ₁ f₁ z a ((del (proj₂ q) P)) Q x) --recursive case came through by changing ∈S to match del
+predMapMembership :  (z : Polarity) -> (a : R) -> (P : State) -> (Q : State) -> a ∉S Q -> (z , a) ∈ (((z , a) ∷ P) ⊔N Q)
+predMapMembership  z a P [] x = here refl
+predMapMembership  z a P (q ∷ Q) x with proj₂ q ≟ a
+predMapMembership z .(proj₂ q) P (q ∷ Q) x | yes refl = ⊥-elim (x refl)
+predMapMembership  z a P (q ∷ Q) x | no ¬p = there (predMapMembership  z a ((del (proj₂ q) P)) Q x) --recursive case came through by changing ∈S to match del
 
 -- If a predicate, a, is not in Q and a predMap containing a is in P then that predMap will be a subtype of P overriden by Q
 predMapPreservation : (Γ₁ : Γ) ->  (f₁ : Action) -> (P : State) -> (Q : State) -> (s : PredMap) -> proj₂ s ∉S Q -> s ∷ [] <: ((s ∷ P) ⊔N Q)
-predMapPreservation Γ₁ f₁ P Q s x₁ = atom<: (predMapMembership Γ₁ f₁ (proj₁ s) (proj₂ s) P Q x₁) ([]<: ((s ∷ P) ⊔N Q))
+predMapPreservation Γ₁ f₁ P Q s x₁ = atom<: (predMapMembership (proj₁ s) (proj₂ s) P Q x₁) ([]<: ((s ∷ P) ⊔N Q))
 
 -- If a predicate is not in Q and a PredMap, s, containing that predicate in P and we have a world which satisfies P overriden by Q then the PredMap s is satisfied in that world
 framePreservation : ∀{f₁ w P s} -> (Γ₁ : Γ) -> (σ : ActionHandler) -> (Q : State) -> proj₂ s ∉S Q -> σ f₁ w ∈⟨ (s ∷ P) ⊔N Q ⟩ -> σ f₁ w ∈⟨ (s ∷ []) ⟩
@@ -696,9 +757,33 @@ strength {f₁} {w} {Q} x σ x₁ x₂ = (λ { a (here px) → proj₁ x₂ a (h
                              ↝ λ { a (here px) x₄ → proj₂ x₂ a (here px) x₄ ; a (there x₃) x₄ → proj₂ x₁ a x₃ x₄}
 
 
+
+
+
 ---------------------------------------------------------------
 -- Theorem 2: Soundness of evaluation of normalised formula
 --
+
+open IsDecEquivalence isDECA renaming (_≟_ to _=A?_) hiding (refl)
+
+isInf : (f₁ : Action) -> (fs : f) -> Set
+isInf f₁ halt = ⊥
+isInf f₁ (act f₂) with f₁ =A? f₂
+isInf f₁ (act f₂) | yes p = f₁ ≡ f₂
+isInf f₁ (act f₂) | no ¬p = ⊥
+isInf f₁ (join fs fs₁) = isInf f₁ fs × isInf f₁ fs₁
+
+
+
+alwaysTrue : ∀{Γ p₁ q₁ f₁} -> Γ , p₁ ↝ q₁ ¦ act f₁ -> trueListExp (proj₁ (Γ f₁))
+alwaysTrue (weakening x _ x₁ x₂) = alwaysTrue x₂
+alwaysTrue (applyAction x vp vq) = x
+alwaysTrue (frame z a x x₁ x₂) = alwaysTrue x₂
+
+--WfH (preSatP Γ₁ (proj₁ (proj₂ (Γ₁ f₁))) (proj₂ (proj₂ (Γ₁ f₁))) f₁ (applyAction eSat)) w∈⟨P⟩ eSat
+--WfHandler : Γ → ActionHandler → Set
+--WfHandler Γ σ =
+--  ∀{α P} → proj₁ (proj₂ (Γ α)) <: P → ∀{w} → w ∈⟨ P ⟩ →  trueListExp (proj₁ (Γ α)) -> σ α w ∈⟨ P ⊔N proj₂ (proj₂ (Γ α)) ⟩
 
 
 sound : ∀{w σ p Γ fs q}
@@ -706,20 +791,17 @@ sound : ∀{w σ p Γ fs q}
       → Γ , p ↝ q ¦ fs
       → w ∈⟨ p ⟩
       → ⟦ fs ⟧ σ w ∈⟨ q ⟩
-sound  {w} {σ} {p} {Γ} {fs} {q} WfH  (weakening p1 x₁ x₂ x) w∈⟨P⟩ with sound WfH x (<:-resp-∈ x₁ w∈⟨P⟩) 
-... | ans = ans
-sound {w} {σ} {p} {Γ} {fs} {q} WfH (applyAction vp vq) w∈⟨P⟩ = wellFormedApplication σ w Γ _ WfH vp vq w∈⟨P⟩
-sound WfH (composition Q'<:Q Γ₁,P↝Q¦fs Γ₁,Q'↝R¦actf') w∈⟨P⟩ = sound WfH Γ₁,Q'↝R¦actf' (<:-resp-∈ Q'<:Q (sound WfH Γ₁,P↝Q¦fs w∈⟨P⟩))
---with sound WfH Γ₁,P↝Q¦fs w∈⟨P⟩
---... | ans = sound WfH Γ₁,Q'↝R¦actf' (<:-resp-∈ Q'<:Q ans)
-sound {w} {σ} {p} {Γ} {fs} {q} WfH (frame {Γ₁} {p₁} {q₁} {f₁} z a x₁ x₃ x₄) x₂ =  strength (z ↝ a) σ
-                                                                                  (sound WfH x₄ (<:-resp-∈ (<:atom p₁ p₁ (z ↝ a) (reflSub p₁)) x₂)) --(weakHelp w (z , a) p₁ x₂))
-                                                                                  (framePreservation Γ σ (proj₂ (Γ f₁))
-                                                                                    (proofSub a (proj₂ (Γ f₁)) q₁ (postSatQ Γ₁ p₁ q₁ f₁ x₄) x₃)
-                                                                                    (WfH (preSatP Γ p q f₁ (frame z a x₁ x₃ x₄)) x₂)) 
+sound  {w} {σ} {p} {Γ} {fs} {q} WfH  (weakening x p1 x₁ x₂) w∈⟨P⟩ with sound WfH x₂ (<:-resp-∈ p1 w∈⟨P⟩) 
+... | ans = ans  
+sound  {w} {σ} {p} {Γ} {fs} {q} WfH (applyAction x₁ vp vq) w∈⟨P⟩ = wellFormedApplication σ w Γ _ WfH vp vq w∈⟨P⟩ x₁
+sound WfH (composition x₁ x₂ x₃) w∈⟨P⟩ with sound WfH x₂ w∈⟨P⟩
+... | ans = sound WfH x₃ ((<:-resp-∈ x₁ ans))
+sound {w} {σ} {p} {Γ} {fs} {q} WfH (frame {Γ₁} {p₁} {q₁} {f₁} z a x₁ x₃ x₄ ) x₂ = strength (z ↝ a) σ
+                                                                                   (sound WfH x₄ (weakHelp w (z , a) p₁ x₂))
+                                                                                   (framePreservation Γ σ (proj₂ (proj₂ (Γ f₁)))
+                                                                                     (proofSub a (proj₂ (proj₂ (Γ f₁))) q₁ (postSatQ Γ₁ p₁ q₁ f₁ x₄) x₃)
+                                                                                     (WfH (preSatP Γ p q f₁ (frame z a x₁ x₃ x₄)) x₂ (alwaysTrue x₄)))  
 sound {w} {σ} {p} {Γ} {fs} {.Q'} WfH (halt Q' x x₁ x₂) x₃ = <:-resp-∈ x₁ (sound WfH x₂ x₃)
-
-
 
 ---------------------------------------------------------------
 -- Theorem 3: Soundness of evaluation
@@ -728,159 +810,14 @@ sound {w} {σ} {p} {Γ} {fs} {.Q'} WfH (halt Q' x x₁ x₂) x₃ = <:-resp-∈ 
 _↓₊ : Form → State
 P ↓₊ = P ↓[ + ] []
 
-
 sound' : ∀{Γ fs P Q σ}
-       → WfHandler Γ σ
-       → Γ , (P ↓₊) ↝ (Q ↓₊) ¦ fs
+       → WfHandler Γ σ 
+         → Γ , (P ↓₊) ↝ (Q ↓₊) ¦ fs
        → ∀{w} → w ⊨[ + ] P
        → ⟦ fs ⟧ σ w ⊨[ + ] Q
 sound' {Γ}{f}{P}{Q}{σ} wfσ Γ⊢f∶P↓₊↝Q↓₊ {w} w⊨₊P = ↓-sound h
   where h : ⟦ f ⟧ σ w ∈⟨ Q ↓₊ ⟩
         h = sound wfσ Γ⊢f∶P↓₊↝Q↓₊ (↓-complete w⊨₊P)
-
------------------------------------------------------------------------
--- Introduces Well-Formed Canonical Handler
-
-remove : R → World → World
-remove x [] = []
-remove x (y ∷ w) with x ≟ y
-remove x (y ∷ w) | yes p = remove x w
-remove x (y ∷ w) | no ¬p = y ∷ remove x w
-
-remove-other : ∀{w x} → x ∈ w → ∀{y} → x ≢ y → x ∈ remove y w
-remove-other {[]}    x∈w x≢y = x∈w
-remove-other {z ∷ w} x∈w {y} x≢z with y ≟ z
-remove-other {z ∷ w} (here _≡_.refl) {y} x≢z | yes p = ⊥-elim (x≢z (IsEquivalence.sym (IsDecEquivalence.isEquivalence isDE) p))
-remove-other {z ∷ w} (there x∈w) {y} x≢z | yes p = remove-other x∈w x≢z
-remove-other {z ∷ w} (here px) {y} x≢z | no ¬p = here px
-remove-other {z ∷ w} (there x∈w) {y} x≢z | no ¬p = there (remove-other x∈w x≢z)
-
-remove-spec : (x : R) (w : World) → x ∉ remove x w
-remove-spec x [] = λ ()
-remove-spec x (y ∷ w) with  x ≟ y
-remove-spec x (y ∷ w) | yes p = remove-spec x w
-remove-spec x (y ∷ w) | no ¬p = contr
-  where
-    contr : x ∉ y ∷ remove x w
-    contr (here x≡y) = ¬p x≡y
-    contr (there x∈) = remove-spec x w x∈
-
--- World constructor from state
-σα : State → World → World
-σα [] w = w
-σα ((+ , x) ∷ N) w = x ∷ σα N w
-σα ((- , x) ∷ N) w = remove x (σα N w)
-
--- Canonical Handler
-canonical-σ : Γ → ActionHandler
-canonical-σ Γ α = σα (proj₂ (Γ α))
-
----------------------------------------------------------------
-
-∉-tail : {A : Set} {xs : List A} {x y : A} → x ∉ y ∷ xs → x ∉ xs
-∉-tail x∉y∷ys x∈ys = x∉y∷ys (there x∈ys)
-
-remove-resp-∈ : ∀{N x y} → x ∈ remove y N → x ∈ N
-remove-resp-∈ {[]}    x∈ = x∈
-remove-resp-∈ {z ∷ N}{x}{y} x∈ with y ≟ z
-remove-resp-∈ {z ∷ N}{x}{y} x∈ | yes refl = there (remove-resp-∈ {N} x∈)
-remove-resp-∈ {z ∷ N} {x} {y} (here refl) | no y≢x = here _≡_.refl
-remove-resp-∈ {z ∷ N} {x} {y} (there x∈)  | no y≢x = there (remove-resp-∈ x∈)
-
-remove-resp-∉ : ∀{N x} → x ∉ N → ∀{y} → x ∉ remove y N
-remove-resp-∉ {[]}    x∉N x∈N' = x∉N x∈N'
-remove-resp-∉ {x ∷ N} x∉N {y} x∈N' with y ≟ x
-remove-resp-∉ {x ∷ N} x∉N {.x} x∈N' | yes refl = remove-resp-∉ (∉-tail x∉N) x∈N'
-remove-resp-∉ {x ∷ N} x∉N {y} (here refl)  | no x≢y = x∉N (here _≡_.refl)
-remove-resp-∉ {x ∷ N} x∉N {y} (there x∈N') | no x≢y = remove-resp-∉ (∉-tail x∉N) x∈N'
-
-sym≢ : {A : Set} → {x y : A} → x ≢ y → y ≢ x
-sym≢ x≢y refl = x≢y _≡_.refl
-
-postulate
-  implicit-consistency-assumption : (t : Polarity) (x : R) → ∀ N → (t , x) ∈ N → (neg t , x) ∉ N
-
-σα-insert : ∀{N x} → (+ , x) ∈ N → ∀ w → x ∈ σα N w
-σα-insert {.(_ ∷ _)} (here refl) w = here _≡_.refl
-σα-insert {(- , y) ∷ N}{x} (there +x∈N) w with y ≟ x
-σα-insert {(- , y) ∷ N}{.y} (there +y∈N) w | yes refl = ⊥-elim (implicit-consistency-assumption - y ((- , y) ∷ N) (here _≡_.refl) (there +y∈N))
-σα-insert {(- , y) ∷ N}{x} (there +x∈N)  w | no y≢x = remove-other (σα-insert +x∈N w) (sym≢ y≢x)
-σα-insert {(+ , y) ∷ N}{x} (there +x∈N) w with y ≟ x
-σα-insert {(+ , y) ∷ N}{.y} (there +x∈N) w | yes refl = here _≡_.refl
-σα-insert {(+ , y) ∷ N}{x} (there +x∈N)  w | no y≢x = there (σα-insert +x∈N w)
-
-σα-keep : ∀{x w} → x ∈ w → ∀{N} → (- , x) ∉ N → x ∈ σα N w
-σα-keep     x∈w {[]}          -x∉N  = x∈w
-σα-keep {x} x∈w {(+ , y) ∷ N} -ty∉N = there (σα-keep x∈w (∉-tail -ty∉N))
-σα-keep {x} x∈w {(- , y) ∷ N} -ty∉N with x ≟ y
-σα-keep {x} x∈w {(- , .x) ∷ N} -ty∉N | yes refl = ⊥-elim (-ty∉N (here _≡_.refl))
-σα-keep {x} x∈w {(- , y) ∷ N} -ty∉N  | no x≢y = remove-other (σα-keep x∈w (∉-tail -ty∉N)) x≢y
-
-σα-delete : ∀{x N} → (- , x) ∈ N → ∀ w → x ∉ σα N w
-σα-delete {x}{[]}    () w
-σα-delete {x}{y ∷ N} (here refl) w = remove-spec x (σα N w)
-σα-delete {x} {(+ , y) ∷ N} (there -x∈N) w with y ≟ x
-σα-delete {x} {(+ , y) ∷ N} (there -x∈N) w | yes refl = ⊥-elim (implicit-consistency-assumption + y ((+ , y) ∷ N) (here _≡_.refl) (there -x∈N))
-σα-delete {x} {(+ , y) ∷ N} (there -x∈N) w | no y≢x = contr where
-  contr : x ∉ y ∷ σα N w
-  contr (here x≡y) = y≢x (Relation.Binary.PropositionalEquality.sym x≡y)
-  contr (there x∈) = σα-delete -x∈N w x∈
-σα-delete {x} {(- , y) ∷ N} (there -x∈N) w = remove-resp-∉ (σα-delete -x∈N w) {y}
-
-σα-source : ∀{N x w} → x ∈ σα N w → (+ , x) ∈ N ⊎ x ∈ w
-σα-source {[]}          {x} x∈ = inj₂ x∈
-σα-source {(+ , y) ∷ N} {x} x∈ with x ≟ y
-σα-source {(+ , .x) ∷ N} {x}{w} x∈ | yes refl = inj₁ (here  _≡_.refl)
-σα-source {(+ , y) ∷ N}  {x}{w} (here refl) | no y≢y = ⊥-elim (y≢y _≡_.refl)
-σα-source {(+ , y) ∷ N}  {x}{w} (there x∈)  | no x≢y = h (σα-source x∈) where
-  h : (+ , x) ∈ N ⊎ x ∈ w → (+ , x) ∈ (+ , y) ∷ N ⊎ x ∈ w
-  h (inj₁ +x∈N) = inj₁ (there +x∈N)
-  h (inj₂ x∈w) = inj₂ x∈w
-σα-source {(- ,  y) ∷ N} {x} x∈ with x ≟ y
-σα-source {(- , .x) ∷ N} {x}{w} x∈ | yes refl = ⊥-elim (remove-spec x (σα N w) x∈)
-σα-source {(- ,  y) ∷ N} {x}{w} x∈ | no x≢y = h (σα-source (remove-resp-∈ x∈)) where
-  h : (+ , x) ∈ N ⊎ x ∈ w → (+ , x) ∈ (- , y) ∷ N ⊎ x ∈ w
-  h (inj₁ +x∈N) = inj₁ (there +x∈N)
-  h (inj₂ x∈w)  = inj₂ x∈w
-
-σα-keep-∉ : ∀{x w} → x ∉ w → ∀{N} → (+ , x) ∉ N → x ∉ σα N w
-σα-keep-∉        x∉w {[]}          +x∉N x∈w = x∉w x∈w
-σα-keep-∉ {x}{w} x∉w {(+ , y) ∷ N} +x∉N (here refl) = +x∉N (here _≡_.refl)
-σα-keep-∉ {x}{w} x∉w {(+ , y) ∷ N} +x∉N (there x∈) = σα-keep-∉ x∉w (∉-tail +x∉N) x∈
-σα-keep-∉ {x}{w} x∉w {(- , y) ∷ N} +x∉N x∈ with x ≟ y
-σα-keep-∉ {x}{w} x∉w {(- , .x) ∷ N} +x∉N x∈ | yes refl = remove-spec x (σα N w) x∈
-σα-keep-∉ {x}{w} x∉w {(- , y) ∷ N}  +x∉N x∈ | no x≢y = h (σα-source (remove-resp-∈ x∈)) where
-  h : (+ , x) ∈ N ⊎ x ∈ w → ⊥
-  h (inj₁ +x∈N) = +x∉N (there +x∈N)
-  h (inj₂ x∈w)  = x∉w x∈w
-
-
-⊔-union : ∀{N t x M} → (t , x) ∈ M ⊔N N → (t , x) ∈ M × (neg t , x) ∉ N ⊎ (t , x) ∈ N
-⊔-union {[]} x∈M = inj₁ (x∈M , λ ())
-⊔-union {x ∷ N} (here refl)   = inj₂ (here _≡_.refl)
-⊔-union {x ∷ N}{t}{y}{M} (there x∈M⊔N) = h (⊔-union {N}{t}{y} x∈M⊔N)
-  where h : (t , y) ∈ del (proj₂ x) M × (neg t , y) ∉ N ⊎ (t , y) ∈ N → (t , y) ∈ M × (neg t , y) ∉ x ∷ N ⊎ (t , y) ∈ x ∷ N
-        h (inj₁ (ty∈ , -ty∉N)) = inj₁ (del-∈ ty∈ , h') where
-          h' : (neg t , y) ∉ x ∷ N
-          h' (here refl) = del-spec t y M ty∈
-          h' (there -ty∈N) = -ty∉N -ty∈N
-        h (inj₂ pf) = inj₂ (there pf)
-
-
-wf-canonical-σ : ∀ Γ → WfHandler Γ (canonical-σ Γ)
-wf-canonical-σ Γ {α} {M} M'<:M {w} w∈⟨M⟩ =
-  (λ a +a∈M → lt a (⊔-union +a∈M)) ,
-  λ a -a∈M a∈w → rt a (⊔-union -a∈M) a∈w
-  where lt : ∀ x → (+x∈M⊎N : (+ , x) ∈ M × (- , x) ∉ proj₂ (Γ α) ⊎ (+ , x) ∈ proj₂ (Γ α)) → x ∈ canonical-σ Γ α w
-        lt x (inj₁ (+x∈M , -x∉N)) = σα-keep (proj₁ w∈⟨M⟩ x +x∈M) -x∉N
-        lt x (inj₂ +x∈N) = σα-insert +x∈N w
-        rt : ∀ x → (+x∈M⊎N : (- , x) ∈ M × (+ , x) ∉ proj₂ (Γ α) ⊎ (- , x) ∈ proj₂ (Γ α)) → x ∉ canonical-σ Γ α w
-        rt x (inj₁ (-x∈M , +x∉N)) = σα-keep-∉ (proj₂ w∈⟨M⟩ x -x∈M) +x∉N
-        rt x (inj₂ -x∈N) = σα-delete -x∈N w 
-
---------------------------------------------------------------------------------------------------------------
-
-
 
 
 

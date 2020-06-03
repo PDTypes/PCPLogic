@@ -12,7 +12,7 @@ open import Level
 -- The following module declarartion allows to develop the file parametrised on an abstract set R of predicates
 -- an an abstract set A of declared actions. The former must have decidable equivalence.
 
-module sep_equality {Action : Set} {R : Set} {C : Set} {isDE : IsDecEquivalence {A = R} (_≡_) }
+module PCPLogic {Action : Set} {R : Set} {C : Set} {isDE : IsDecEquivalence {A = R} (_≡_) }
                                               {isDEC : IsDecEquivalence {A = C} (_≡_) }
                                               {isDECA : IsDecEquivalence {A = Action} (_≡_) }where
 

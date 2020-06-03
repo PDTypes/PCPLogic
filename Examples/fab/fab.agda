@@ -51,7 +51,7 @@ isDECA = record { isEquivalence = record {
   trans = trans } ;
   _≟_ = mangle  }
 
-open import sep_equality {Action} {R} {C} {isDecidable} {isDEC} {isDECA}
+open import PCPLogic {Action} {R} {C} {isDecidable} {isDEC} {isDECA}
 
 open import Data.Product
 
