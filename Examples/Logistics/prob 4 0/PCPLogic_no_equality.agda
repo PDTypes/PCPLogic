@@ -6,7 +6,7 @@ open import Relation.Binary.PropositionalEquality
 open import Level
 
 --------------------------------------------------------
--- Section 3: Definition of formulae, possible world semantics, actions, plans
+--  Definition of formulae, possible world semantics, actions, plans
 
 --
 -- The following module declarartion allows to develop the file parametrised on an abstract set R of predicates
@@ -62,7 +62,7 @@ neg + = -
 neg - = +
 
 --------------------------------------------------------
--- Figure 6. Declarative (possible world) semantics
+-- Declarative (possible world) semantics
 --
 
 open import Data.List.Membership.Propositional
@@ -240,7 +240,7 @@ open import AnyLemma
 
 
 --
--- soundness of operational semantics (Theorem 1)
+-- soundness of operational semantics 
 --
 ↓-sound : ∀{w t P} → w ∈⟨ P ↓[ t ] [] ⟩ → w ⊨[ t ] P
 ↓-sound {w} {t} {P ∧ Q} x
@@ -314,7 +314,7 @@ helperNeg w t P Q N a x x1 x2 x3 | inj₂ y = proj₂ x a y x3
 
 
 --
--- Completeness of operational semantics (Theorem 1)
+-- Completeness of operational semantics 
 --
 ↓-complete : ∀{w t P} → w ⊨[ t ] P → w ∈⟨ P ↓[ t ] [] ⟩
 ↓-complete {w} {t} {P ∧ Q} (both x y)
@@ -697,7 +697,7 @@ strength {f₁} {w} {Q} x σ x₁ x₂ = (λ { a (here px) → proj₁ x₂ a (h
 
 
 ---------------------------------------------------------------
--- Theorem 2: Soundness of evaluation of normalised formula
+--  Soundness of evaluation of normalised formula
 --
 
 
@@ -722,7 +722,7 @@ sound {w} {σ} {p} {Γ} {fs} {.Q'} WfH (halt Q' x x₁ x₂) x₃ = <:-resp-∈ 
 
 
 ---------------------------------------------------------------
--- Theorem 3: Soundness of evaluation
+--  Soundness of evaluation
 --
 
 _↓₊ : Form → State

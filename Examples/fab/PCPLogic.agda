@@ -1,12 +1,12 @@
 -- Alasdair Hill
--- This file defines Planning languages as types, plans as prrof terms approach to PDDL
+-- This file defines Proof Carrying Logic
 
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
 open import Level
 
 --------------------------------------------------------
--- Section 3: Definition of formulae, possible world semantics, actions, plans
+-- Definition of formulae, possible world semantics, actions, plans
 
 --
 -- The following module declarartion allows to develop the file parametrised on an abstract set R of predicates
@@ -63,24 +63,13 @@ neg + = -
 neg - = +
 
 
-
-{- This is silly
-
-open import Data.Sum
-
-data exp (A B : Set) : Set where
-  _∧L_ : exp A B → exp A B → exp A B
-  ¬L_ :  (a b : (A ⊎ B)) -> a ≢ b → exp A B
-  _=L_ : (a b : (A ⊎ B)) -> a ≡ b -> exp A B
--}
-
 -- Logical expressions involving equality
 data exp : Set where
   _¬L_ : (a b : C) -> exp
   _=L_ : (a b : C) -> exp
 
 --------------------------------------------------------
--- Figure 6. Declarative (possible world) semantics
+-- Declarative (possible world) semantics
 --
 
 open import Data.List.Membership.Propositional
@@ -256,7 +245,7 @@ open import AnyLemma
 
 
 --
--- soundness of operational semantics (Theorem 1)
+-- soundness of operational semantics
 --
 ↓-sound : ∀{w t P} → w ∈⟨ P ↓[ t ] [] ⟩ → w ⊨[ t ] P
 ↓-sound {w} {t} {P ∧ Q} x
@@ -330,7 +319,7 @@ helperNeg w t P Q N a x x1 x2 x3 | inj₂ y = proj₂ x a y x3
 
 
 --
--- Completeness of operational semantics (Theorem 1)
+-- Completeness of operational semantics 
 --
 ↓-complete : ∀{w t P} → w ⊨[ t ] P → w ∈⟨ P ↓[ t ] [] ⟩
 ↓-complete {w} {t} {P ∧ Q} (both x y)
@@ -478,14 +467,6 @@ decSub (p ∷ P) Q | yes p₁ | yes p₂ = yes (atom<: p₁ p₂)
 
 -----------------------------------------------------------------------
 
-{-
--- Logical expressions involving equality
-data exp : Set where
-  empL : exp
-  _∧L_ : exp → exp → exp
-  _¬L_ : (a b : C) -> exp
-  _=L_ : (a b : C) -> exp -}
-
 trueExp : exp -> Set
 trueExp (a ¬L b) with a =C? b
 trueExp (a ¬L .a) | yes refl = ⊥
@@ -566,11 +547,6 @@ validStateToS [] x = tt
 validStateToS ((z ↝ r) ∷ S) x with isInState r S
 validStateToS ((z ↝ r) ∷ S) x | yes p = ⊥-elim x
 validStateToS ((z ↝ r) ∷ S) x | no ¬p = ¬p ↝ validStateToS S x
-
--- An assumption that all Actions contain valid States
-postulate
-  act-ass : (Γ₁ : Γ) -> (f : Action) -> validS (proj₁ (proj₂ (Γ₁ f))) × validS (proj₂ ( proj₂(Γ₁ f)))
-
 
 -- A proof showing that our rules will never introduce inconsistency as long as we were given
 -- valid actions.
@@ -761,7 +737,7 @@ strength {f₁} {w} {Q} x σ x₁ x₂ = (λ { a (here px) → proj₁ x₂ a (h
 
 
 ---------------------------------------------------------------
--- Theorem 2: Soundness of evaluation of normalised formula
+-- Soundness of evaluation of normalised formula
 --
 
 open IsDecEquivalence isDECA renaming (_≟_ to _=A?_) hiding (refl)
@@ -804,7 +780,7 @@ sound {w} {σ} {p} {Γ} {fs} {q} WfH (frame {Γ₁} {p₁} {q₁} {f₁} z a x�
 sound {w} {σ} {p} {Γ} {fs} {.Q'} WfH (halt Q' x x₁ x₂) x₃ = <:-resp-∈ x₁ (sound WfH x₂ x₃)
 
 ---------------------------------------------------------------
--- Theorem 3: Soundness of evaluation
+--  Soundness of evaluation
 --
 
 _↓₊ : Form → State

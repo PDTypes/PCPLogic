@@ -2,6 +2,7 @@
 
 (setq domainfile "satellite-domain.pddl")
 (setq problemfile "satellite-problem.pddl")
+(setq agdafile "satellite")
 (setq outputfile "run")
 
 
@@ -41,7 +42,7 @@
 
   ;imports
   (write-line "" my-stream)
-  (write-line "open import satellite" my-stream)
+  (write-line (concatenate 'string "open import " agdafile)  my-stream)
   (write-line "open import Agda.Builtin.IO" my-stream)
   (write-line "open import Agda.Builtin.Unit" my-stream)
   (write-line "open import Agda.Builtin.String" my-stream)
