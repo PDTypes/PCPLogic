@@ -17,6 +17,6 @@
     (load "convert_agda")
     (load "solver")))
 
-(print "compiling...")
+(print "...")
 
 (time (run-shell-command (concatenate 'string "agda " outputfile ".agda")))

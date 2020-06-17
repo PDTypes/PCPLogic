@@ -16,11 +16,6 @@
       s)
 ))
 
-;(setq domainfile "mprime-domain.pddl")
-;(setq problemfile "mprime-problem.pddl")
-;(setq outputfile "mprime")
-
-
 (load "domain_agda")
 (load "problem_agda")
 
@@ -109,7 +104,7 @@
 
   ;instantiate proof system
   (write-line "" my-stream)
-  (write-line "open import PCPLogic {Action} {R} {C} {isDecidable} {isDEC} {isDECA}" my-stream)
+  (write-line "open import PCPLogic_no_equality {Action} {R} {C} {isDecidable} {isDEC} {isDECA}" my-stream)
 
   (write-line "" my-stream)
   (write-line "open import Data.Product" my-stream)
