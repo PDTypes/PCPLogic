@@ -36,6 +36,8 @@ These folders contain the:
 
 The automation algorithms are run by editing a run.lisp program in the relevant Automation Algorithm folder.
 
+This is done by:
+
 1. Open run.lisp.
 2. Change the domainfile and problemfile variables to the path of the pddl domain and problem you want to type check.
 3. Set the name of the generated agda file by changing the outputfile variable.
