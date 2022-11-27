@@ -21,12 +21,11 @@
 
 (time (run-shell-command (concatenate 'string "agda " outputfile ".agda")))
 
-;Real time: 0.035277 sec.
-;Run time: 0.035144 sec.
-;Space: 2949488 Bytes
-;GC: 3, GC time: 0.004919 sec.
-;"compiling..." Checking satellite (/home/alasdair/Documents/PCPLogic_Experimenta;l/PCPLogic-master (1)/PCPLogic-master/Examples/Satellite/satellite.agda).
-
-;Real time: 19.136003 sec.
-;Run time: 9.9E-5 sec.
+;Real time: 0.033822 sec.
+;Run time: 0.033731 sec.
+;Space: 2847784 Bytes
+;GC: 3, GC time: 0.005184 sec.
+;"compiling..." Checking satellite (/home/alasdair/Documents/Sep_PDDL/New Code/satellite.agda).
+;Real time: 15.660141 sec.
+;Run time: 1.11E-4 sec.
 ;Space: 360 Bytes

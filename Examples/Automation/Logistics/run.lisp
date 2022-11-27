@@ -2,6 +2,7 @@
 (setq problemfile "logistics-problem.pddl")
 (setq outputfile "logistics")
 
+;plan length 24
 (setq plan '(
 (load-truck 'obj23 'tru2 'pos2)
 (load-truck 'obj21 'tru2 'pos2)
@@ -37,13 +38,15 @@
 
 (time (run-shell-command (concatenate 'string "agda " outputfile ".agda")))
 
-;Real time: 0.069277 sec.
-;Run time: 0.069165 sec.
-;Space: 9484752 Bytes
-;GC: 10, GC time: 0.01382 sec.
-;"compiling..." Checking logistics (/home/alasdair/Documents/PCPLogic_Experimental/PCPLogic-master (1)/PCPLogic-master/Examples/Logistics/prob 4 0/logistics.agda).
+#||
+Real time: 0.047998 sec.
+Run time: 0.046999 sec.
+Space: 9414680 Bytes
+GC: 5, GC time: 0.016817 sec.
+"compiling..." Checking logistics (/home/alasdair/Documents/PCPLogic_Experimental/PCPLogic-master (1)/PCPLogic-master/Examples/Automation/Logistics/logistics.agda).
 
-;Real time: 33.153152 sec.
-;Run time: 1.15E-4 sec.
-;Space: 360 Bytes
+Real time: 18.959225 sec.
+Run time: 5.8E-5 sec.
+Space: 360 Bytes
+||#
 

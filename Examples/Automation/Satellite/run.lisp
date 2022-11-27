@@ -2,6 +2,7 @@
 (setq problemfile "satellite-problem.pddl")
 (setq outputfile "satellite")
 
+;plan length 9
 (setq plan '((turn_to 'satellite0 'groundstation2 'phenomenon6)
 (switch_on 'instrument0 'satellite0)
 (calibrate 'satellite0 'instrument0 'groundstation2)
@@ -21,12 +22,17 @@
 
 (time (run-shell-command (concatenate 'string "agda " outputfile ".agda")))
 
-;Real time: 0.035277 sec.
-;Run time: 0.035144 sec.
-;Space: 2949488 Bytes
-;GC: 3, GC time: 0.004919 sec.
-;"compiling..." Checking satellite (/home/alasdair/Documents/PCPLogic_Experimenta;l/PCPLogic-master (1)/PCPLogic-master/Examples/Satellite/satellite.agda).
+#||
+Real time: 0.018911 sec.
+Run time: 0.018892 sec.
+Space: 2944680 Bytes
+GC: 1, GC time: 0.003785 sec.
+"compiling..." Checking satellite (/home/alasdair/Documents/PCPLogic_Experimental/PCPLogic-master (1)/PCPLogic-master/Examples/Automation/Satellite/satellite.agda).
 
-;Real time: 19.136003 sec.
-;Run time: 9.9E-5 sec.
-;Space: 360 Bytes
+Real time: 11.788809 sec.
+Run time: 8.0E-5 sec.
+Space: 360 Bytes
+
+||#
+
+

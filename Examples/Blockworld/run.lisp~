@@ -22,12 +22,11 @@
 
 (time (run-shell-command (concatenate 'string "agda " outputfile ".agda")))
 
-;Real time: 0.030145 sec.
-;Run time: 0.030047 sec.
-;Space: 2345320 Bytes
-;GC: 2, GC time: 0.003504 sec.
-;"compiling..." Checking blocksworld (/home/alasdair/Documents/PCPLogic_Experimental/PCPLogic-master (1)/PCPLogic-master/Examples/Blockworld/blocksworld.agda).
-;Real time: 16.072989 sec.
-;Run time: 1.13E-4 sec.
+;Real time: 0.030017 sec.
+;Run time: 0.029494 sec.
+;Space: 2251968 Bytes
+;GC: 2, GC time: 0.003461 sec.
+;"compiling..."
+;Real time: 10.33406 sec.
+;Run time: 1.03E-4 sec.
 ;Space: 376 Bytes
-

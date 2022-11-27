@@ -23,12 +23,11 @@
 
 (time (run-shell-command (concatenate 'string "agda " outputfile ".agda")))
 
-;Real time: 0.087704 sec.
-;Run time: 0.087562 sec.
-;Space: 16899064 Bytes
-;GC: 19, GC time: 0.024812 sec.
-;"compiling..." Checking mprime (/home/alasdair/Documents/PCPLogic_Experimental/P;CPLogic-master (1)/PCPLogic-master/Examples/mprime/mprime.agda).
-
-;Real time: 50.04608 sec.
-;Run time: 1.26E-4 sec.
+;Real time: 0.088123 sec.
+;Run time: 0.087967 sec.
+;Space: 16793288 Bytes
+;GC: 18, GC time: 0.024597 sec.
+;"compiling..." Checking mprime (/home/alasdair/Documents/Sep_PDDL/New Code/Equality/mprime.agda).
+;Real time: 44.589264 sec.
+;Run time: 1.03E-4 sec.
 ;Space: 360 Bytes

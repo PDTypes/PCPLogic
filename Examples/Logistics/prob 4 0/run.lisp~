@@ -37,13 +37,11 @@
 
 (time (run-shell-command (concatenate 'string "agda " outputfile ".agda")))
 
-;Real time: 0.069277 sec.
-;Run time: 0.069165 sec.
-;Space: 9484752 Bytes
-;GC: 10, GC time: 0.01382 sec.
-;"compiling..." Checking logistics (/home/alasdair/Documents/PCPLogic_Experimental/PCPLogic-master (1)/PCPLogic-master/Examples/Logistics/prob 4 0/logistics.agda).
-
-;Real time: 33.153152 sec.
-;Run time: 1.15E-4 sec.
+;Real time: 0.073228 sec.
+;Run time: 0.072959 sec.
+;Space: 9358600 Bytes
+;GC: 10, GC time: 0.015352 sec.
+;"compiling..." Checking logistics (/home/alasdair/Documents/Sep_PDDL/New Code/logistics.agda).
+;Real time: 28.86838 sec.
+;Run time: 1.02E-4 sec.
 ;Space: 360 Bytes
-
